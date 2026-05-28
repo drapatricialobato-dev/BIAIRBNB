@@ -258,6 +258,46 @@ body {
 .chart-card:nth-child(2) { animation-delay: 0.35s; }
 .chart-card:nth-child(3) { animation-delay: 0.40s; }
 
+/* ---- Filter Badges (filtros ativos) ---- */
+#filterBadge {
+  display: none;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 0 0 12px 0;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #333;
+  border: 1px solid #555;
+  color: #ddd;
+  font-size: 0.72rem;
+  font-family: var(--font-mono);
+  padding: 4px 10px;
+  border-radius: 20px;
+  animation: fadeInUp 0.2s ease both;
+}
+
+.badge button {
+  background: none;
+  border: none;
+  color: #aaa;
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  transition: color 0.15s;
+}
+
+.badge button:hover { color: #fff; }
+
+/* Cursor pointer nos canvas clicáveis */
+#chartLucroMes,
+#chartLucroAno,
+#chartLucroGeral { cursor: pointer; }
+
 /* ---- Loading overlay ---- */
 .loading-overlay {
   position: fixed;
