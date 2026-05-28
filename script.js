@@ -483,10 +483,30 @@ function baseScales(tickSize = 11) {
 }
 
 // ------------------------------------------------
-// 12. REFRESH CENTRAL — chama tudo junto
+// 12. UTILITÁRIO RESPONSIVO
+// ------------------------------------------------
+
+function isMobile() { return window.innerWidth < 600; }
+
+function applyChartHeights() {
+  const w = window.innerWidth;
+  const s = w < 600
+    ? { mes: 180, ano: 160, geral: 280 }
+    : w < 900
+    ? { mes: 210, ano: 190, geral: 340 }
+    : { mes: 240, ano: 195, geral: 470 };
+  const set = (id, h) => { const el = document.getElementById(id); if (el) el.style.height = h + 'px'; };
+  set('chartLucroMes', s.mes);
+  set('chartLucroAno', s.ano);
+  set('chartLucroGeral', s.geral);
+}
+
+// ------------------------------------------------
+// 13. REFRESH CENTRAL — chama tudo junto
 // ------------------------------------------------
 
 function refreshAll() {
+  applyChartHeights();
   updateKPIs();
   renderLucroMes();
   renderLucroAno();
@@ -521,6 +541,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Render inicial
   refreshAll();
+
+  // Reajusta ao girar o celular ou redimensionar janela
+  let resizeTimer;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => refreshAll(), 200);
+  });
 
   // Data no header
   const now = new Date();

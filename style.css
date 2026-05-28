@@ -1,6 +1,6 @@
 /* =============================================
    DASHBOARD - CONTROLE APARTAMENTO
-   Tema: Power BI Dark/Corporate
+   Tema: Power BI Dark/Corporate — Mobile First
    ============================================= */
 
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
@@ -15,24 +15,15 @@
   --text-primary: #f0f0f0;
   --text-secondary: #aaaaaa;
   --text-muted: #666;
-  --accent: #ffffff;
-  --accent-dim: #cccccc;
-  --positive: #e8e8e8;
-  --negative: #888888;
-  --bar-color: #e8e8e8;
-  --bar-negative: #666666;
-  --bar-hover: #ffffff;
   --shadow: 0 2px 12px rgba(0,0,0,0.5);
   --radius: 10px;
   --font-main: 'IBM Plex Sans', sans-serif;
   --font-mono: 'IBM Plex Mono', monospace;
 }
 
-/* ---- Reset & Base ---- */
+/* ---- Reset ---- */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-html { font-size: 16px; scroll-behavior: smooth; }
-
+html { font-size: 16px; scroll-behavior: smooth; -webkit-tap-highlight-color: transparent; }
 body {
   font-family: var(--font-main);
   background: var(--bg-main);
@@ -41,11 +32,13 @@ body {
   overflow-x: hidden;
 }
 
-/* ---- Header ---- */
+/* ============================================
+   HEADER
+   ============================================ */
 .dashboard-header {
   background: #111;
   border-bottom: 1px solid var(--border);
-  padding: 14px 24px;
+  padding: 12px 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -55,65 +48,71 @@ body {
 }
 
 .dashboard-header h1 {
-  font-size: 1rem;
+  font-size: 0.85rem;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--text-primary);
 }
 
 .header-meta {
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   color: var(--text-muted);
   font-family: var(--font-mono);
 }
 
-/* ---- Main Layout ---- */
+/* ============================================
+   LAYOUT PRINCIPAL
+   ============================================ */
 .dashboard-body {
-  padding: 20px;
+  padding: 12px;
   max-width: 1600px;
   margin: 0 auto;
 }
 
-/* ---- KPI Cards Row ---- */
+/* ============================================
+   KPI CARDS — empilhados 2×2 no mobile
+   ============================================ */
 .kpi-row {
   display: grid;
-  grid-template-columns: repeat(4, 1fr) 160px;
-  gap: 12px;
-  margin-bottom: 16px;
+  /* Mobile: 2 colunas */
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 10px;
 }
 
 .kpi-card {
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 16px 20px;
+  padding: 12px 14px;
   position: relative;
   overflow: hidden;
   transition: border-color 0.2s, background 0.2s;
+  /* Toque mais fácil no mobile */
+  -webkit-tap-highlight-color: transparent;
 }
 
-.kpi-card:hover {
-  background: var(--bg-card-hover);
-  border-color: var(--border-light);
-}
+.kpi-card:active { background: var(--bg-card-hover); }
 
 .kpi-label {
-  font-size: 0.72rem;
+  font-size: 0.65rem;
   font-weight: 500;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--text-secondary);
-  margin-bottom: 10px;
+  margin-bottom: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .kpi-value {
   font-family: var(--font-mono);
-  font-size: 1.65rem;
+  font-size: 1.05rem;        /* Menor no mobile */
   font-weight: 600;
-  color: var(--text-primary);
   line-height: 1;
   transition: color 0.3s;
+  word-break: break-all;     /* Evita overflow em telas pequenas */
 }
 
 .kpi-value.negative { color: #999; }
@@ -121,149 +120,60 @@ body {
 
 .kpi-accent-line {
   position: absolute;
-  bottom: 0;
-  left: 0;
-  height: 2px;
-  width: 100%;
+  bottom: 0; left: 0;
+  height: 2px; width: 100%;
   background: linear-gradient(90deg, #555 0%, transparent 100%);
 }
 
-/* ---- Filter Card ---- */
+/* Filtro de ano — ocupa linha inteira no mobile */
 .filter-card {
+  grid-column: 1 / -1;          /* Span full width */
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 16px 20px;
+  padding: 10px 14px;
   display: flex;
-  flex-direction: column;
-  gap: 8px;
+  align-items: center;
+  gap: 10px;
 }
 
 .filter-label {
-  font-size: 0.72rem;
+  font-size: 0.65rem;
   font-weight: 500;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--text-secondary);
+  white-space: nowrap;
 }
 
 .filter-select {
+  flex: 1;
   background: #333;
   border: 1px solid var(--border-light);
   color: var(--text-primary);
-  padding: 6px 12px;
+  padding: 7px 30px 7px 12px;
   border-radius: 6px;
   font-family: var(--font-main);
   font-size: 0.85rem;
   cursor: pointer;
-  width: 100%;
   appearance: none;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23aaa' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 10px center;
-  padding-right: 28px;
-  transition: border-color 0.2s;
+  /* Altura mínima para toque fácil */
+  min-height: 38px;
 }
 
-.filter-select:focus {
-  outline: none;
-  border-color: #666;
-}
+.filter-select:focus { outline: none; border-color: #666; }
 
-/* ---- Charts Grid ---- */
-.charts-grid {
-  display: grid;
-  grid-template-columns: 1fr 2fr;
-  grid-template-rows: auto auto;
-  gap: 12px;
-}
-
-/* Chart card base */
-.chart-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 20px;
-  position: relative;
-  overflow: hidden;
-  transition: border-color 0.2s;
-}
-
-.chart-card:hover { border-color: var(--border-light); }
-
-.chart-title {
-  font-size: 0.78rem;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: var(--text-secondary);
-  margin-bottom: 16px;
-}
-
-/* Left column stacked */
-.left-col {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-/* Large right chart */
-.chart-card.large {
-  grid-column: 2;
-  grid-row: 1 / 3;
-}
-
-/* Canvas containers */
-.chart-container {
-  position: relative;
-  width: 100%;
-}
-
-.chart-container canvas {
-  width: 100% !important;
-}
-
-/* ---- Tooltip custom ---- */
-.custom-tooltip {
-  background: #111 !important;
-  border: 1px solid #444 !important;
-  border-radius: 6px !important;
-  color: #fff !important;
-  font-family: var(--font-mono) !important;
-  font-size: 12px !important;
-  padding: 8px 12px !important;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.6) !important;
-}
-
-/* ---- Animations ---- */
-@keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(16px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes countUp {
-  from { opacity: 0; }
-  to   { opacity: 1; }
-}
-
-.kpi-card { animation: fadeInUp 0.4s ease both; }
-.kpi-card:nth-child(1) { animation-delay: 0.05s; }
-.kpi-card:nth-child(2) { animation-delay: 0.10s; }
-.kpi-card:nth-child(3) { animation-delay: 0.15s; }
-.kpi-card:nth-child(4) { animation-delay: 0.20s; }
-.kpi-card:nth-child(5) { animation-delay: 0.25s; }
-
-.chart-card { animation: fadeInUp 0.5s ease both; }
-.chart-card:nth-child(1) { animation-delay: 0.30s; }
-.chart-card:nth-child(2) { animation-delay: 0.35s; }
-.chart-card:nth-child(3) { animation-delay: 0.40s; }
-
-/* ---- Filter Badges (filtros ativos) ---- */
+/* ============================================
+   BADGES DE FILTRO ATIVO
+   ============================================ */
 #filterBadge {
   display: none;
   flex-wrap: wrap;
-  gap: 8px;
-  padding: 0 0 12px 0;
+  gap: 6px;
+  padding: 0 0 10px 0;
 }
 
 .badge {
@@ -273,9 +183,9 @@ body {
   background: #333;
   border: 1px solid #555;
   color: #ddd;
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   font-family: var(--font-mono);
-  padding: 4px 10px;
+  padding: 5px 10px;
   border-radius: 20px;
   animation: fadeInUp 0.2s ease both;
 }
@@ -284,92 +194,179 @@ body {
   background: none;
   border: none;
   color: #aaa;
-  font-size: 0.9rem;
+  font-size: 1rem;
   cursor: pointer;
-  padding: 0;
+  padding: 0 2px;
   line-height: 1;
-  transition: color 0.15s;
+  /* Área de toque maior no mobile */
+  min-width: 20px;
+  min-height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.badge button:hover { color: #fff; }
+.badge button:active { color: #fff; }
 
-/* Cursor pointer nos canvas clicáveis */
+/* ============================================
+   GRÁFICOS — uma coluna no mobile
+   ============================================ */
+.charts-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.left-col {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.chart-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 12px 10px;
+  position: relative;
+  overflow: hidden;
+}
+
+.chart-title {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  margin-bottom: 10px;
+}
+
+/* Alturas dos gráficos no mobile — compactas mas legíveis */
+.chart-container { position: relative; width: 100%; }
+.chart-container canvas { width: 100% !important; }
+
+/* Gráfico Lucro por Mês */
+#chartLucroMes  { height: 180px; }
+/* Gráfico Lucro por Ano */
+#chartLucroAno  { height: 160px; }
+/* Gráfico Grande */
+#chartLucroGeral { height: 280px; }
+
+/* Cursores clicáveis */
 #chartLucroMes,
 #chartLucroAno,
 #chartLucroGeral { cursor: pointer; }
 
-/* ---- Loading overlay ---- */
+/* ============================================
+   ANIMAÇÕES
+   ============================================ */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.kpi-card { animation: fadeInUp 0.35s ease both; }
+.kpi-card:nth-child(1) { animation-delay: 0.05s; }
+.kpi-card:nth-child(2) { animation-delay: 0.10s; }
+.kpi-card:nth-child(3) { animation-delay: 0.15s; }
+.kpi-card:nth-child(4) { animation-delay: 0.20s; }
+.kpi-card:nth-child(5) { animation-delay: 0.25s; }
+
+.chart-card { animation: fadeInUp 0.4s ease both; }
+.chart-card:nth-child(1) { animation-delay: 0.28s; }
+.chart-card:nth-child(2) { animation-delay: 0.33s; }
+.chart-card:nth-child(3) { animation-delay: 0.38s; }
+
+/* ============================================
+   LOADING
+   ============================================ */
 .loading-overlay {
-  position: fixed;
-  inset: 0;
+  position: fixed; inset: 0;
   background: var(--bg-main);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: flex; align-items: center; justify-content: center;
   z-index: 999;
   transition: opacity 0.4s;
 }
-
-.loading-overlay.hidden {
-  opacity: 0;
-  pointer-events: none;
-}
+.loading-overlay.hidden { opacity: 0; pointer-events: none; }
 
 .loading-spinner {
-  width: 36px;
-  height: 36px;
+  width: 32px; height: 32px;
   border: 2px solid #333;
   border-top-color: #888;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
-
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* ---- Scrollbar ---- */
-::-webkit-scrollbar { width: 6px; height: 6px; }
+/* ============================================
+   SCROLLBAR
+   ============================================ */
+::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: #1a1a1a; }
 ::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #555; }
 
 /* ============================================
-   RESPONSIVE
+   TABLET  (≥ 600px)
    ============================================ */
+@media (min-width: 600px) {
+  .dashboard-body { padding: 16px; }
 
-/* Tablet */
-@media (max-width: 1100px) {
+  .kpi-row { grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+  .filter-card { grid-column: auto; }   /* Volta ao fluxo normal */
+
+  .kpi-value { font-size: 1.25rem; }
+
+  #chartLucroMes   { height: 210px; }
+  #chartLucroAno   { height: 190px; }
+  #chartLucroGeral { height: 340px; }
+
+  .header-meta { display: block; }
+}
+
+/* ============================================
+   DESKTOP  (≥ 900px) — layout lado a lado
+   ============================================ */
+@media (min-width: 900px) {
+  .dashboard-body { padding: 20px; }
+
+  /* KPIs em linha */
   .kpi-row {
-    grid-template-columns: repeat(2, 1fr) 1fr;
+    grid-template-columns: repeat(4, 1fr) 160px;
+    gap: 12px;
+    margin-bottom: 14px;
   }
-  .kpi-row .filter-card { grid-column: 3; }
+  .filter-card {
+    grid-column: auto;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 16px 20px;
+    gap: 8px;
+  }
+  .kpi-value { font-size: 1.55rem; }
+  .kpi-label { font-size: 0.72rem; }
+  .kpi-card  { padding: 16px 20px; }
 
+  /* Gráficos: coluna esquerda + grande direito */
   .charts-grid {
-    grid-template-columns: 1fr;
+    display: grid;
+    grid-template-columns: 1fr 2fr;
     grid-template-rows: auto;
+    flex-direction: unset;
   }
-  .chart-card.large {
-    grid-column: 1;
-    grid-row: auto;
-  }
+  .left-col { grid-column: 1; grid-row: 1; }
+  .chart-card.large { grid-column: 2; grid-row: 1; }
+
+  #chartLucroMes   { height: 240px; }
+  #chartLucroAno   { height: 195px; }
+  #chartLucroGeral { height: 470px; }
+
+  .chart-card { padding: 20px; }
+  .chart-title { font-size: 0.78rem; margin-bottom: 14px; }
 }
 
-/* Mobile */
-@media (max-width: 640px) {
-  .dashboard-body { padding: 12px; }
-
-  .kpi-row {
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: auto auto auto;
-  }
-  .kpi-row .filter-card { grid-column: 1 / -1; flex-direction: row; align-items: center; gap: 12px; }
-
-  .kpi-value { font-size: 1.2rem; }
-
-  .dashboard-header h1 { font-size: 0.85rem; }
-  .header-meta { display: none; }
-}
-
-@media (max-width: 400px) {
-  .kpi-row { grid-template-columns: 1fr; }
-  .kpi-row .filter-card { grid-column: 1; }
+/* ============================================
+   WIDE DESKTOP  (≥ 1200px)
+   ============================================ */
+@media (min-width: 1200px) {
+  .kpi-value { font-size: 1.65rem; }
 }
