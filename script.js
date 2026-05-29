@@ -20,11 +20,6 @@ const MONTH_ABBR = {
   'SETEMBRO':'set','OUTUBRO':'out','NOVEMBRO':'nov','DEZEMBRO':'dez'
 };
 
-// Inverso: abreviação → nome completo
-const ABBR_TO_MONTH = Object.fromEntries(
-  Object.entries(MONTH_ABBR).map(([k,v]) => [v, k])
-);
-
 const RAW_DATA = {
   2023: {
     'SETEMBRO': -733.85, 'OUTUBRO': -1478.85,
@@ -56,94 +51,100 @@ const GLOBAL_KPI = {
 };
 
 // ------------------------------------------------
-// 2. ESTADO DOS FILTROS CRUZADOS
+// 2. PALETA DE CORES
 // ------------------------------------------------
 
-const filters = {
-  year: null,   // null = todos | 2023/2024/2025/2026
-  month: null   // null = todos | 'JANEIRO' etc.
+const COLORS = {
+  barPos:      '#60a5fa',   // azul — lucro
+  barPosHover: '#93c5fd',
+  barNeg:      '#f87171',   // vermelho — prejuízo
+  barNegHover: '#fca5a5',
+  barDim:      '#2a3547',   // desfocada
+
+  // Uma cor por ano para o gráfico grande
+  year: {
+    2023: { base: '#64748b', hover: '#94a3b8' },
+    2024: { base: '#60a5fa', hover: '#93c5fd' },
+    2025: { base: '#a78bfa', hover: '#c4b5fd' },
+    2026: { base: '#34d399', hover: '#6ee7b7' }
+  },
+
+  // Labels nas barras
+  labelPos: '#93c5fd',
+  labelNeg: '#fca5a5',
+  labelDim: '#4a5568'
 };
 
 // ------------------------------------------------
-// 3. UTILITÁRIOS
+// 3. ESTADO DOS FILTROS
+// ------------------------------------------------
+
+const filters = { year: null, month: null };
+
+// ------------------------------------------------
+// 4. UTILITÁRIOS
 // ------------------------------------------------
 
 function formatBRL(value) {
   const abs = Math.abs(value);
-  const formatted = abs.toLocaleString('pt-BR', {
-    minimumFractionDigits: 2, maximumFractionDigits: 2
-  });
-  return (value < 0 ? '-' : '') + 'R$' + formatted;
+  const str = abs.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return (value < 0 ? '-' : '') + 'R$' + str;
 }
 
 function animateValue(el, start, end, duration = 700) {
-  const startTime = performance.now();
-  function update(t) {
-    const p = Math.min((t - startTime) / duration, 1);
+  const t0 = performance.now();
+  function tick(t) {
+    const p    = Math.min((t - t0) / duration, 1);
     const ease = 1 - Math.pow(1 - p, 3);
     el.textContent = formatBRL(start + (end - start) * ease);
-    if (p < 1) requestAnimationFrame(update);
+    if (p < 1) requestAnimationFrame(tick);
   }
-  requestAnimationFrame(update);
+  requestAnimationFrame(tick);
 }
 
-// Retorna dados filtrados pelo estado atual
 function getFilteredData() {
   let years = Object.keys(RAW_DATA).map(Number);
   if (filters.year) years = years.filter(y => y === filters.year);
-
-  const result = {}; // { year: { month: value } }
+  const result = {};
   years.forEach(y => {
     result[y] = {};
     Object.entries(RAW_DATA[y]).forEach(([m, v]) => {
-      if (!filters.month || m === filters.month) {
-        result[y][m] = v;
-      }
+      if (!filters.month || m === filters.month) result[y][m] = v;
     });
   });
   return result;
 }
 
-// Soma total dos dados filtrados
 function sumFiltered(data) {
-  return Object.values(data)
-    .flatMap(months => Object.values(months))
-    .reduce((a, b) => a + b, 0);
+  return Object.values(data).flatMap(m => Object.values(m)).reduce((a, b) => a + b, 0);
 }
 
 // ------------------------------------------------
-// 4. CHIPS DE FILTRO ATIVO (feedback visual)
+// 5. BADGES DE FILTRO
 // ------------------------------------------------
 
 function updateFilterBadges() {
   const badge = document.getElementById('filterBadge');
   if (!badge) return;
-
   const parts = [];
-  if (filters.year)  parts.push(`Ano: ${filters.year}`);
-  if (filters.month) parts.push(`Mês: ${filters.month.charAt(0) + filters.month.slice(1).toLowerCase()}`);
+  if (filters.year)  parts.push({ label: `Ano: ${filters.year}`,  type: 'year' });
+  if (filters.month) parts.push({ label: `Mês: ${filters.month.charAt(0) + filters.month.slice(1).toLowerCase()}`, type: 'month' });
 
-  if (parts.length === 0) {
-    badge.innerHTML = '';
-    badge.style.display = 'none';
-  } else {
-    badge.style.display = 'flex';
-    badge.innerHTML = parts.map(p =>
-      `<span class="badge">${p} <button onclick="clearFilter('${p.startsWith('Ano') ? 'year' : 'month'}')">×</button></span>`
-    ).join('');
-  }
+  if (!parts.length) { badge.innerHTML = ''; badge.style.display = 'none'; return; }
+  badge.style.display = 'flex';
+  badge.innerHTML = parts.map(p =>
+    `<span class="badge">${p.label} <button onclick="clearFilter('${p.type}')">×</button></span>`
+  ).join('');
 }
 
 function clearFilter(type) {
   filters[type] = null;
-  if (type === 'year') {
-    document.getElementById('filterAno').value = 'Todos';
-  }
+  if (type === 'year') document.getElementById('filterAno').value = 'Todos';
   refreshAll();
 }
 
 // ------------------------------------------------
-// 5. INSTÂNCIAS DOS GRÁFICOS
+// 6. INSTÂNCIAS DOS GRÁFICOS
 // ------------------------------------------------
 
 let chartLucroMes   = null;
@@ -151,28 +152,33 @@ let chartLucroAno   = null;
 let chartLucroGeral = null;
 
 // ------------------------------------------------
-// 6. PLUGIN DE LABELS NAS BARRAS
+// 7. PLUGIN DE LABELS NAS BARRAS
 // ------------------------------------------------
 
 const labelsPlugin = {
   id: 'barLabels',
-  afterDatasetsDraw(chart, args, opts = {}) {
+  afterDatasetsDraw(chart, _args, opts = {}) {
     const { ctx, data } = chart;
-    const maxDatasets = opts.maxDatasets ?? 99;
-    if (data.datasets.length > maxDatasets) return;
+    if (data.datasets.length > (opts.maxDatasets ?? 99)) return;
 
-    const fontSize = opts.fontSize ?? 10;
+    // Fonte maior: 11px mobile, 12px desktop
+    const mobile   = window.innerWidth < 600;
+    const fontSize = opts.fontSize ?? (mobile ? 11 : 12);
+
     data.datasets.forEach((ds, i) => {
-      const meta = chart.getDatasetMeta(i);
-      meta.data.forEach((bar, j) => {
+      chart.getDatasetMeta(i).data.forEach((bar, j) => {
         const v = ds.data[j];
         if (v == null) return;
+
+        const isDimmed = bar.options?.backgroundColor === COLORS.barDim;
+        const isNeg    = v < 0;
+
         ctx.save();
-        ctx.font = `600 ${fontSize}px "IBM Plex Mono"`;
-        ctx.fillStyle = v >= 0 ? '#ccc' : '#888';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = v >= 0 ? 'bottom' : 'top';
-        ctx.fillText(formatBRL(v), bar.x, v >= 0 ? bar.y - 4 : bar.y + bar.height + 4);
+        ctx.font      = `600 ${fontSize}px "IBM Plex Mono"`;
+        ctx.fillStyle = isDimmed ? COLORS.labelDim : isNeg ? COLORS.labelNeg : COLORS.labelPos;
+        ctx.textAlign    = 'center';
+        ctx.textBaseline = isNeg ? 'top' : 'bottom';
+        ctx.fillText(formatBRL(v), bar.x, isNeg ? bar.y + bar.height + 4 : bar.y - 4);
         ctx.restore();
       });
     });
@@ -181,46 +187,77 @@ const labelsPlugin = {
 Chart.register(labelsPlugin);
 
 // ------------------------------------------------
-// 7. GRÁFICO: LUCRO POR MÊS
+// 8. TOOLTIP PADRÃO
+// ------------------------------------------------
+
+function makeTooltip(labelFn) {
+  return {
+    backgroundColor: '#0d1117',
+    borderColor: '#3d4f66',
+    borderWidth: 1,
+    titleColor: '#8896a8',
+    bodyColor: '#e8edf4',
+    titleFont: { family: 'IBM Plex Mono', size: 11 },
+    bodyFont:  { family: 'IBM Plex Mono', size: 13, weight: '600' },
+    padding: 10,
+    callbacks: { label: labelFn }
+  };
+}
+
+// ------------------------------------------------
+// 9. ESCALA X PADRÃO
+// ------------------------------------------------
+
+function makeScaleX(tickSize = 11) {
+  return {
+    grid:  { color: 'rgba(255,255,255,0.03)' },
+    ticks: { color: '#4a5568', font: { family: 'IBM Plex Sans', size: tickSize }, maxRotation: 0 },
+    border: { color: '#2d3748' }
+  };
+}
+
+// ------------------------------------------------
+// 10. CORES DAS BARRAS (positivo/negativo/dimmed)
+// ------------------------------------------------
+
+function barColors(values, activeFilter) {
+  return values.map((v, i) => {
+    if (activeFilter !== null && i !== activeFilter) return COLORS.barDim;
+    return v >= 0 ? COLORS.barPos : COLORS.barNeg;
+  });
+}
+
+function barColorsHover(values) {
+  return values.map(v => v >= 0 ? COLORS.barPosHover : COLORS.barNegHover);
+}
+
+// ------------------------------------------------
+// 11. GRÁFICO: LUCRO POR MÊS
 // ------------------------------------------------
 
 function renderLucroMes() {
+  const yearToShow  = filters.year || 2026;
+  const raw         = RAW_DATA[yearToShow] || {};
+  const allMonths   = MONTH_ORDER.filter(m => raw[m] !== undefined);
+  const values      = allMonths.map(m => raw[m]);
+  const labels      = allMonths.map(m => MONTH_ABBR[m]);
+  const activeIdx   = filters.month ? allMonths.indexOf(filters.month) : null;
+
   const canvas = document.getElementById('chartLucroMes');
-
-  // Qual ano mostrar: filtro ativo ou mais recente
-  const yearToShow = filters.year || 2026;
-  const raw = RAW_DATA[yearToShow] || {};
-
-  const months = MONTH_ORDER.filter(m =>
-    !filters.month || m === filters.month
-      ? raw[m] !== undefined
-      : false
-  );
-  // Se mês filtrado não tem dados no ano, mostra todos do ano
-  const finalMonths = months.length ? months : MONTH_ORDER.filter(m => raw[m] !== undefined);
-  const values = finalMonths.map(m => raw[m]);
-  const labels = finalMonths.map(m => MONTH_ABBR[m]);
-
-  // Cores: destaca mês filtrado
-  const bgColors = finalMonths.map(m => {
-    if (filters.month && m === filters.month) return '#ffffff';
-    if (filters.month && m !== filters.month) return '#3a3a3a';
-    return values[finalMonths.indexOf(m)] >= 0 ? '#e0e0e0' : '#666';
-  });
-
   if (chartLucroMes) chartLucroMes.destroy();
+
   chartLucroMes = new Chart(canvas, {
     type: 'bar',
     data: {
       labels,
       datasets: [{
-        data: values,
-        backgroundColor: bgColors,
-        hoverBackgroundColor: finalMonths.map(() => '#ffffff'),
-        borderRadius: 3,
-        borderSkipped: false,
-        barPercentage: 0.7,
-        categoryPercentage: 0.75
+        data:                values,
+        backgroundColor:     barColors(values, activeIdx),
+        hoverBackgroundColor:barColorsHover(values),
+        borderRadius:        4,
+        borderSkipped:       false,
+        barPercentage:       0.7,
+        categoryPercentage:  0.75
       }]
     },
     options: {
@@ -228,69 +265,53 @@ function renderLucroMes() {
       maintainAspectRatio: false,
       animation: { duration: 400, easing: 'easeOutCubic' },
       onClick(e, elements) {
-        if (!elements.length) {
-          // Clicou em área vazia: limpa filtro de mês
-          if (filters.month) { filters.month = null; refreshAll(); }
-          return;
-        }
-        const idx = elements[0].index;
-        const clickedMonth = finalMonths[idx];
-        // Toggle: clica no mesmo → limpa; diferente → filtra
-        filters.month = filters.month === clickedMonth ? null : clickedMonth;
+        if (!elements.length) { if (filters.month) { filters.month = null; refreshAll(); } return; }
+        const m = allMonths[elements[0].index];
+        filters.month = filters.month === m ? null : m;
         refreshAll();
       },
       plugins: {
         legend: { display: false },
-        barLabels: { fontSize: 10, maxDatasets: 2 },
-        tooltip: tooltipConfig(ctx => ' ' + formatBRL(ctx.parsed.y))
+        barLabels: { maxDatasets: 1 },
+        tooltip: makeTooltip(ctx => ' ' + formatBRL(ctx.parsed.y))
       },
-      scales: baseScales(10),
-      layout: { padding: { top: 32 } },
-      cursor: 'pointer'
+      scales: { x: makeScaleX(10), y: { display: false } },
+      layout: { padding: { top: 34 } }
     }
   });
 
-  // Título
-  const titleEl = document.getElementById('titleLucroMes');
-  if (titleEl) titleEl.textContent = `Lucro por Mês em ${yearToShow}`;
+  // Atualiza título
+  const el = document.getElementById('titleLucroMes');
+  if (el) el.textContent = `Lucro por Mês em ${yearToShow}`;
 }
 
 // ------------------------------------------------
-// 8. GRÁFICO: LUCRO POR ANO
+// 12. GRÁFICO: LUCRO POR ANO
 // ------------------------------------------------
 
 function renderLucroAno() {
-  const canvas = document.getElementById('chartLucroAno');
-  const years = Object.keys(RAW_DATA).map(Number).sort();
-
+  const years  = Object.keys(RAW_DATA).map(Number).sort();
   const values = years.map(y => {
-    const months = filters.month
-      ? (RAW_DATA[y][filters.month] ?? null)
-      : Object.values(RAW_DATA[y]).reduce((a, b) => a + b, 0);
-    return months;
+    if (filters.month) return RAW_DATA[y][filters.month] ?? null;
+    return Object.values(RAW_DATA[y]).reduce((a, b) => a + b, 0);
   });
+  const activeIdx = filters.year ? years.indexOf(filters.year) : null;
 
-  // Cores: destaca ano filtrado
-  const bgColors = years.map(y => {
-    if (filters.year && y === filters.year) return '#ffffff';
-    if (filters.year && y !== filters.year) return '#3a3a3a';
-    const v = values[years.indexOf(y)];
-    return v >= 0 ? '#e0e0e0' : '#666';
-  });
-
+  const canvas = document.getElementById('chartLucroAno');
   if (chartLucroAno) chartLucroAno.destroy();
+
   chartLucroAno = new Chart(canvas, {
     type: 'bar',
     data: {
       labels: years.map(String),
       datasets: [{
-        data: values,
-        backgroundColor: bgColors,
-        hoverBackgroundColor: years.map(() => '#ffffff'),
-        borderRadius: 3,
-        borderSkipped: false,
-        barPercentage: 0.65,
-        categoryPercentage: 0.7
+        data:                values,
+        backgroundColor:     barColors(values, activeIdx),
+        hoverBackgroundColor:barColorsHover(values),
+        borderRadius:        4,
+        borderSkipped:       false,
+        barPercentage:       0.65,
+        categoryPercentage:  0.7
       }]
     },
     options: {
@@ -298,63 +319,64 @@ function renderLucroAno() {
       maintainAspectRatio: false,
       animation: { duration: 400, easing: 'easeOutCubic' },
       onClick(e, elements) {
-        if (!elements.length) {
-          if (filters.year) { filters.year = null; document.getElementById('filterAno').value = 'Todos'; refreshAll(); }
-          return;
-        }
-        const idx = elements[0].index;
-        const clickedYear = years[idx];
-        filters.year = filters.year === clickedYear ? null : clickedYear;
+        if (!elements.length) { if (filters.year) { filters.year = null; document.getElementById('filterAno').value = 'Todos'; refreshAll(); } return; }
+        const y = years[elements[0].index];
+        filters.year = filters.year === y ? null : y;
         document.getElementById('filterAno').value = filters.year || 'Todos';
         refreshAll();
       },
       plugins: {
         legend: { display: false },
-        barLabels: { fontSize: 10, maxDatasets: 1 },
-        tooltip: tooltipConfig(ctx => ' ' + formatBRL(ctx.parsed.y))
+        barLabels: { maxDatasets: 1 },
+        tooltip: makeTooltip(ctx => ' ' + formatBRL(ctx.parsed.y))
       },
-      scales: baseScales(11),
-      layout: { padding: { top: 36 } }
+      scales: { x: makeScaleX(11), y: { display: false } },
+      layout: { padding: { top: 38 } }
     }
   });
 }
 
 // ------------------------------------------------
-// 9. GRÁFICO GRANDE: LUCRO GERAL (todos anos × meses)
+// 13. GRÁFICO GRANDE: TODOS OS ANOS × MESES
 // ------------------------------------------------
 
 function renderLucroGeral() {
-  const canvas = document.getElementById('chartLucroGeral');
-  const allYears = Object.keys(RAW_DATA).map(Number).sort();
-
-  // Anos visíveis
+  const allYears    = Object.keys(RAW_DATA).map(Number).sort();
   const yearsToShow = filters.year ? [filters.year] : allYears;
-
-  // Meses visíveis
-  const usedMonths = filters.month
+  const usedMonths  = filters.month
     ? [filters.month]
     : MONTH_ORDER.filter(m => yearsToShow.some(y => RAW_DATA[y]?.[m] !== undefined));
 
-  const yearColors    = { 2023:'#505050', 2024:'#787878', 2025:'#a8a8a8', 2026:'#e0e0e0' };
-  const yearColorsHov = { 2023:'#686868', 2024:'#909090', 2025:'#c0c0c0', 2026:'#ffffff' };
+  const datasets = yearsToShow.map(y => {
+    const palette = COLORS.year[y] || { base: '#60a5fa', hover: '#93c5fd' };
+    const values  = usedMonths.map(m => RAW_DATA[y]?.[m] ?? null);
 
-  const datasets = yearsToShow.map(y => ({
-    label: String(y),
-    data: usedMonths.map(m => RAW_DATA[y]?.[m] ?? null),
-    backgroundColor: usedMonths.map(m => {
-      const base = yearColors[y] || '#888';
-      // Dimmer se há mês filtrado mas este não é o filtrado
-      if (filters.month && m !== filters.month) return base + '55';
-      return base;
-    }),
-    hoverBackgroundColor: yearColorsHov[y] || '#aaa',
-    borderRadius: 2,
-    borderSkipped: false,
-    barPercentage: 0.85,
-    categoryPercentage: 0.8
-  }));
+    // Cada barra: cor do ano se positivo, vermelho se negativo
+    const bgColors = values.map((v, i) => {
+      if (v === null) return 'transparent';
+      if (filters.month && usedMonths[i] !== filters.month) return palette.base + '33';
+      return v < 0 ? COLORS.barNeg : palette.base;
+    });
 
+    const hoverColors = values.map(v =>
+      v === null ? 'transparent' : v < 0 ? COLORS.barNegHover : palette.hover
+    );
+
+    return {
+      label: String(y),
+      data:  values,
+      backgroundColor:      bgColors,
+      hoverBackgroundColor: hoverColors,
+      borderRadius:         3,
+      borderSkipped:        false,
+      barPercentage:        0.85,
+      categoryPercentage:   0.8
+    };
+  });
+
+  const canvas = document.getElementById('chartLucroGeral');
   if (chartLucroGeral) chartLucroGeral.destroy();
+
   chartLucroGeral = new Chart(canvas, {
     type: 'bar',
     data: { labels: usedMonths.map(m => MONTH_ABBR[m]), datasets },
@@ -364,19 +386,10 @@ function renderLucroGeral() {
       animation: { duration: 400, easing: 'easeOutCubic' },
       onClick(e, elements) {
         if (!elements.length) return;
-        const idx = elements[0].index;
-        const clickedMonth = usedMonths[idx];
-        const dsIdx = elements[0].datasetIndex;
-        const clickedYear = yearsToShow[dsIdx];
-
-        // Clique em barra: filtra mês E ano dessa barra
-        const sameMonth = filters.month === clickedMonth;
-        const sameYear  = filters.year  === clickedYear;
-
-        if (sameMonth && sameYear) {
-          // Toggle off
-          filters.month = null;
-          filters.year  = null;
+        const clickedMonth = usedMonths[elements[0].index];
+        const clickedYear  = yearsToShow[elements[0].datasetIndex];
+        if (filters.month === clickedMonth && filters.year === clickedYear) {
+          filters.month = null; filters.year = null;
           document.getElementById('filterAno').value = 'Todos';
         } else {
           filters.month = clickedMonth;
@@ -390,34 +403,35 @@ function renderLucroGeral() {
           display: yearsToShow.length > 1,
           position: 'top', align: 'end',
           labels: {
-            color: '#aaa',
+            color: '#8896a8',
             font: { family: 'IBM Plex Sans', size: 11 },
-            boxWidth: 12, boxHeight: 12, padding: 16
+            boxWidth: 10, boxHeight: 10, padding: 14,
+            usePointStyle: true, pointStyle: 'circle'
           }
         },
-        barLabels: { fontSize: 9, maxDatasets: 2 },
+        barLabels: { maxDatasets: 2, fontSize: 10 },
         tooltip: {
-          backgroundColor: '#111', borderColor: '#444', borderWidth: 1,
-          titleColor: '#aaa', bodyColor: '#fff',
+          backgroundColor: '#0d1117', borderColor: '#3d4f66', borderWidth: 1,
+          titleColor: '#8896a8', bodyColor: '#e8edf4',
           titleFont: { family: 'IBM Plex Mono', size: 11 },
-          bodyFont: { family: 'IBM Plex Mono', size: 12, weight: '600' },
+          bodyFont:  { family: 'IBM Plex Mono', size: 12, weight: '600' },
           padding: 10,
           callbacks: {
             title: items => items[0].label.toUpperCase(),
-            label: ctx => ` ${ctx.dataset.label}: ${formatBRL(ctx.parsed.y)}`
+            label: ctx  => ` ${ctx.dataset.label}: ${formatBRL(ctx.parsed.y)}`
           }
         }
       },
       scales: {
-        x: {
-          grid: { color: 'rgba(255,255,255,0.04)' },
-          ticks: { color: '#888', font: { family: 'IBM Plex Sans', size: 11 }, maxRotation: 0 },
-          border: { color: '#333' }
-        },
+        x: makeScaleX(11),
         y: {
           display: true,
-          grid: { color: 'rgba(255,255,255,0.05)' },
-          ticks: { color: '#666', font: { family: 'IBM Plex Mono', size: 10 }, callback: v => 'R$'+(v/1000).toFixed(0)+'k' },
+          grid:  { color: 'rgba(255,255,255,0.04)' },
+          ticks: {
+            color: '#4a5568',
+            font:  { family: 'IBM Plex Mono', size: 10 },
+            callback: v => 'R$' + (v / 1000).toFixed(0) + 'k'
+          },
           border: { display: false }
         }
       },
@@ -427,22 +441,18 @@ function renderLucroGeral() {
 }
 
 // ------------------------------------------------
-// 10. ATUALIZAR KPIs
+// 14. KPIs
 // ------------------------------------------------
 
 function updateKPIs() {
-  const filtered = getFilteredData();
+  const filtered  = getFilteredData();
   const totalLucro = sumFiltered(filtered);
-
-  // Recebimentos e Gastos: escala proporcional ao filtro
-  const allLucro = GLOBAL_KPI.lucro;
-  const ratio = allLucro !== 0 ? totalLucro / allLucro : 1;
-
-  const noFilter = !filters.year && !filters.month;
+  const noFilter   = !filters.year && !filters.month;
+  const ratio      = GLOBAL_KPI.lucro !== 0 ? Math.abs(totalLucro / GLOBAL_KPI.lucro) : 1;
 
   setKPI('kpiBalanco',      GLOBAL_KPI.balancoTotal);
-  setKPI('kpiRecebimentos', noFilter ? GLOBAL_KPI.recebimentos : GLOBAL_KPI.recebimentos * Math.abs(ratio));
-  setKPI('kpiGastos',       noFilter ? GLOBAL_KPI.gastos       : GLOBAL_KPI.gastos * Math.abs(ratio));
+  setKPI('kpiRecebimentos', noFilter ? GLOBAL_KPI.recebimentos : GLOBAL_KPI.recebimentos * ratio);
+  setKPI('kpiGastos',       noFilter ? GLOBAL_KPI.gastos       : GLOBAL_KPI.gastos * ratio);
   setKPI('kpiLucro',        totalLucro);
 }
 
@@ -457,52 +467,22 @@ function setKPI(id, value) {
 }
 
 // ------------------------------------------------
-// 11. CONFIGS REUTILIZÁVEIS
+// 15. RESPONSIVO
 // ------------------------------------------------
-
-function tooltipConfig(labelFn) {
-  return {
-    backgroundColor: '#111', borderColor: '#444', borderWidth: 1,
-    titleColor: '#aaa', bodyColor: '#fff',
-    titleFont: { family: 'IBM Plex Mono', size: 11 },
-    bodyFont: { family: 'IBM Plex Mono', size: 12, weight: '600' },
-    padding: 10,
-    callbacks: { label: labelFn }
-  };
-}
-
-function baseScales(tickSize = 11) {
-  return {
-    x: {
-      grid: { color: 'rgba(255,255,255,0.04)' },
-      ticks: { color: '#888', font: { family: 'IBM Plex Sans', size: tickSize }, maxRotation: 0 },
-      border: { color: '#333' }
-    },
-    y: { display: false }
-  };
-}
-
-// ------------------------------------------------
-// 12. UTILITÁRIO RESPONSIVO
-// ------------------------------------------------
-
-function isMobile() { return window.innerWidth < 600; }
 
 function applyChartHeights() {
   const w = window.innerWidth;
-  const s = w < 600
-    ? { mes: 180, ano: 160, geral: 280 }
-    : w < 900
-    ? { mes: 210, ano: 190, geral: 340 }
-    : { mes: 240, ano: 195, geral: 470 };
+  const s = w < 600  ? { mes: 180, ano: 160, geral: 280 }
+          : w < 900  ? { mes: 210, ano: 190, geral: 340 }
+          :            { mes: 240, ano: 195, geral: 470 };
   const set = (id, h) => { const el = document.getElementById(id); if (el) el.style.height = h + 'px'; };
-  set('chartLucroMes', s.mes);
-  set('chartLucroAno', s.ano);
+  set('chartLucroMes',   s.mes);
+  set('chartLucroAno',   s.ano);
   set('chartLucroGeral', s.geral);
 }
 
 // ------------------------------------------------
-// 13. REFRESH CENTRAL — chama tudo junto
+// 16. REFRESH CENTRAL
 // ------------------------------------------------
 
 function refreshAll() {
@@ -515,17 +495,16 @@ function refreshAll() {
 }
 
 // ------------------------------------------------
-// 13. INICIALIZAÇÃO
+// 17. INICIALIZAÇÃO
 // ------------------------------------------------
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Remove loading
   setTimeout(() => {
     const overlay = document.getElementById('loadingOverlay');
     if (overlay) overlay.classList.add('hidden');
   }, 500);
 
-  // Popula select de anos
+  // Popula anos no select
   const select = document.getElementById('filterAno');
   if (select) {
     Object.keys(RAW_DATA).sort().reverse().forEach(y => {
@@ -539,18 +518,18 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Render inicial
   refreshAll();
 
-  // Reajusta ao girar o celular ou redimensionar janela
+  // Resize ao girar celular
   let resizeTimer;
   window.addEventListener('resize', () => {
     clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(() => refreshAll(), 200);
+    resizeTimer = setTimeout(refreshAll, 200);
   });
 
   // Data no header
-  const now = new Date();
   const el = document.getElementById('headerDate');
-  if (el) el.textContent = '— ' + now.toLocaleDateString('pt-BR', { day:'2-digit', month:'long', year:'numeric' });
+  if (el) el.textContent = '— ' + new Date().toLocaleDateString('pt-BR', {
+    day: '2-digit', month: 'long', year: 'numeric'
+  });
 });

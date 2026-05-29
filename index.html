@@ -4,133 +4,95 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Dashboard — Controle Apartamento</title>
-
-  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
-
-  <!-- Chart.js CDN -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-
-  <!-- Estilos -->
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-  <!-- =================== LOADING =================== -->
+  <!-- LOADING -->
   <div class="loading-overlay" id="loadingOverlay">
     <div class="loading-spinner"></div>
   </div>
 
-  <!-- =================== HEADER =================== -->
+  <!-- HEADER -->
   <header class="dashboard-header">
-    <h1>Controle Apartamento</h1>
-    <span class="header-meta" id="headerDate">— Dashboard Financeiro</span>
+    <h1><span class="header-dot"></span>Controle Apartamento</h1>
+    <span class="header-meta" id="headerDate"></span>
   </header>
 
-  <!-- =================== BODY =================== -->
+  <!-- BODY -->
   <main class="dashboard-body">
 
-    <!-- === KPI CARDS ROW === -->
+    <!-- KPI CARDS -->
     <section class="kpi-row">
 
-      <!-- Balanço Total -->
-      <div class="kpi-card">
+      <div class="kpi-card accent-blue">
         <div class="kpi-label">Balanço Total</div>
-        <div class="kpi-value negative" id="kpiBalanco" data-value="-114764.63">
-          -R$114.764,63
-        </div>
-        <div class="kpi-accent-line"></div>
+        <div class="kpi-value negative" id="kpiBalanco" data-value="-114764.63">-R$114.764,63</div>
       </div>
 
-      <!-- Recebimentos -->
-      <div class="kpi-card">
+      <div class="kpi-card accent-green">
         <div class="kpi-label">Recebimentos</div>
-        <div class="kpi-value positive" id="kpiRecebimentos" data-value="117834.00">
-          R$117.834,00
-        </div>
-        <div class="kpi-accent-line"></div>
+        <div class="kpi-value positive" id="kpiRecebimentos" data-value="117834.00">R$117.834,00</div>
       </div>
 
-      <!-- Gastos -->
-      <div class="kpi-card">
+      <div class="kpi-card accent-amber">
         <div class="kpi-label">Gastos</div>
-        <div class="kpi-value positive" id="kpiGastos" data-value="44306.13">
-          R$44.306,13
-        </div>
-        <div class="kpi-accent-line"></div>
+        <div class="kpi-value positive" id="kpiGastos" data-value="44306.13">R$44.306,13</div>
       </div>
 
-      <!-- Lucro -->
-      <div class="kpi-card">
+      <div class="kpi-card accent-purple">
         <div class="kpi-label">Lucro</div>
-        <div class="kpi-value positive" id="kpiLucro" data-value="73350.23">
-          R$73.350,23
-        </div>
-        <div class="kpi-accent-line"></div>
+        <div class="kpi-value positive" id="kpiLucro" data-value="73350.23">R$73.350,23</div>
       </div>
 
-      <!-- Filtro de Ano -->
-      <div class="kpi-card filter-card">
+      <div class="kpi-card filter-card accent-slate">
         <div class="filter-label">Ano</div>
         <select class="filter-select" id="filterAno">
           <option value="Todos">Todos</option>
-          <!-- Anos populados via JS -->
         </select>
       </div>
 
-    </section><!-- /kpi-row -->
+    </section>
 
-    <!-- === FILTROS ATIVOS (badges) === -->
+    <!-- BADGES -->
     <div id="filterBadge"></div>
 
-    <!-- === CHARTS GRID === -->
+    <!-- GRÁFICOS -->
     <section class="charts-grid">
 
-      <!-- Coluna esquerda -->
       <div class="left-col">
 
-        <!-- Lucro por Mês -->
-        <div class="chart-card">
+        <div class="chart-card dot-blue">
           <div class="chart-title" id="titleLucroMes">Lucro por Mês em 2026</div>
-          <div class="chart-container" style="height: 240px;">
+          <div class="chart-container">
             <canvas id="chartLucroMes"></canvas>
           </div>
         </div>
 
-        <!-- Lucro por Ano (consolidado) -->
-        <div class="chart-card">
+        <div class="chart-card dot-purple">
           <div class="chart-title">Lucro por Ano</div>
-          <div class="chart-container" style="height: 200px;">
+          <div class="chart-container">
             <canvas id="chartLucroAno"></canvas>
           </div>
         </div>
 
-      </div><!-- /left-col -->
+      </div>
 
-      <!-- Gráfico grande: Lucro por Ano × Mês -->
-      <div class="chart-card large">
-        <div class="chart-title">Lucro por Ano</div>
-        <div class="chart-container" style="height: 470px;">
+      <div class="chart-card large dot-green">
+        <div class="chart-title">Lucro por Ano — Visão Mensal</div>
+        <div class="chart-container">
           <canvas id="chartLucroGeral"></canvas>
         </div>
       </div>
 
-    </section><!-- /charts-grid -->
+    </section>
 
-  </main><!-- /dashboard-body -->
+  </main>
 
-  <!-- Scripts -->
   <script src="script.js"></script>
-
-  <script>
-    // Atualiza data no header
-    const now = new Date();
-    const opts = { day: '2-digit', month: 'long', year: 'numeric' };
-    document.getElementById('headerDate').textContent =
-      '— ' + now.toLocaleDateString('pt-BR', opts);
-  </script>
-
 </body>
 </html>

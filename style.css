@@ -1,21 +1,49 @@
 /* =============================================
    DASHBOARD - CONTROLE APARTAMENTO
-   Tema: Power BI Dark/Corporate — Mobile First
+   Tema: Dark Refined + Cores Funcionais
    ============================================= */
 
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 
-/* ---- CSS Variables ---- */
 :root {
-  --bg-main: #1a1a1a;
-  --bg-card: #222222;
-  --bg-card-hover: #2a2a2a;
-  --border: #3a3a3a;
-  --border-light: #444;
-  --text-primary: #f0f0f0;
-  --text-secondary: #aaaaaa;
-  --text-muted: #666;
-  --shadow: 0 2px 12px rgba(0,0,0,0.5);
+  /* Backgrounds */
+  --bg-main:       #161b22;
+  --bg-card:       #1e2530;
+  --bg-card-hover: #252d3a;
+  --bg-header:     #0d1117;
+
+  /* Borders */
+  --border:        #2d3748;
+  --border-light:  #3d4f66;
+
+  /* Text */
+  --text-primary:   #e8edf4;
+  --text-secondary: #8896a8;
+  --text-muted:     #4a5568;
+
+  /* Cor funcional: positivo */
+  --color-positive:     #4ade80;   /* verde suave */
+  --color-positive-dim: #166534;
+  --color-positive-bg:  rgba(74,222,128,0.08);
+
+  /* Cor funcional: negativo/prejuízo */
+  --color-negative:     #f87171;   /* vermelho suave */
+  --color-negative-dim: #7f1d1d;
+  --color-negative-bg:  rgba(248,113,113,0.08);
+
+  /* Barras dos gráficos */
+  --bar-pos:       #60a5fa;   /* azul claro — neutro, fácil leitura */
+  --bar-pos-hover: #93c5fd;
+  --bar-neg:       #f87171;   /* vermelho — prejuízo */
+  --bar-neg-hover: #fca5a5;
+  --bar-dim:       #2a3547;   /* barra desfocada (filtro ativo) */
+
+  /* Anos (gráfico grande) */
+  --year-2023: #64748b;
+  --year-2024: #60a5fa;
+  --year-2025: #a78bfa;
+  --year-2026: #34d399;
+
   --radius: 10px;
   --font-main: 'IBM Plex Sans', sans-serif;
   --font-mono: 'IBM Plex Mono', monospace;
@@ -36,7 +64,7 @@ body {
    HEADER
    ============================================ */
 .dashboard-header {
-  background: #111;
+  background: var(--bg-header);
   border-bottom: 1px solid var(--border);
   padding: 12px 16px;
   display: flex;
@@ -52,6 +80,22 @@ body {
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  color: var(--text-primary);
+}
+
+.header-dot {
+  display: inline-block;
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--color-positive);
+  margin-right: 8px;
+  box-shadow: 0 0 6px var(--color-positive);
+  animation: pulse 2s ease infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
 }
 
 .header-meta {
@@ -61,7 +105,7 @@ body {
 }
 
 /* ============================================
-   LAYOUT PRINCIPAL
+   LAYOUT
    ============================================ */
 .dashboard-body {
   padding: 12px;
@@ -70,11 +114,10 @@ body {
 }
 
 /* ============================================
-   KPI CARDS — empilhados 2×2 no mobile
+   KPI CARDS
    ============================================ */
 .kpi-row {
   display: grid;
-  /* Mobile: 2 colunas */
   grid-template-columns: 1fr 1fr;
   gap: 8px;
   margin-bottom: 10px;
@@ -88,11 +131,25 @@ body {
   position: relative;
   overflow: hidden;
   transition: border-color 0.2s, background 0.2s;
-  /* Toque mais fácil no mobile */
-  -webkit-tap-highlight-color: transparent;
 }
 
 .kpi-card:active { background: var(--bg-card-hover); }
+
+/* Faixa colorida no topo de cada card */
+.kpi-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--card-accent, var(--border-light));
+  border-radius: var(--radius) var(--radius) 0 0;
+}
+
+.kpi-card.accent-blue   { --card-accent: #60a5fa; }
+.kpi-card.accent-green  { --card-accent: var(--color-positive); }
+.kpi-card.accent-amber  { --card-accent: #fbbf24; }
+.kpi-card.accent-purple { --card-accent: #a78bfa; }
+.kpi-card.accent-slate  { --card-accent: #64748b; }
 
 .kpi-label {
   font-size: 0.65rem;
@@ -108,26 +165,24 @@ body {
 
 .kpi-value {
   font-family: var(--font-mono);
-  font-size: 1.05rem;        /* Menor no mobile */
+  font-size: 1.05rem;
   font-weight: 600;
   line-height: 1;
   transition: color 0.3s;
-  word-break: break-all;     /* Evita overflow em telas pequenas */
+  word-break: break-all;
 }
 
-.kpi-value.negative { color: #999; }
-.kpi-value.positive { color: #f0f0f0; }
+/* KPI: cor muda com o valor */
+.kpi-value.negative { color: var(--color-negative); }
+.kpi-value.positive { color: var(--text-primary); }
 
-.kpi-accent-line {
-  position: absolute;
-  bottom: 0; left: 0;
-  height: 2px; width: 100%;
-  background: linear-gradient(90deg, #555 0%, transparent 100%);
-}
+/* KPI de lucro ganha cor verde quando positivo */
+#kpiLucro.positive { color: var(--color-positive); }
+#kpiLucro.negative { color: var(--color-negative); }
 
-/* Filtro de ano — ocupa linha inteira no mobile */
+/* Filtro */
 .filter-card {
-  grid-column: 1 / -1;          /* Span full width */
+  grid-column: 1 / -1;
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -148,7 +203,7 @@ body {
 
 .filter-select {
   flex: 1;
-  background: #333;
+  background: #1a2333;
   border: 1px solid var(--border-light);
   color: var(--text-primary);
   padding: 7px 30px 7px 12px;
@@ -157,17 +212,16 @@ body {
   font-size: 0.85rem;
   cursor: pointer;
   appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23aaa' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238896a8' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 10px center;
-  /* Altura mínima para toque fácil */
   min-height: 38px;
+  transition: border-color 0.2s;
 }
-
-.filter-select:focus { outline: none; border-color: #666; }
+.filter-select:focus { outline: none; border-color: #60a5fa; }
 
 /* ============================================
-   BADGES DE FILTRO ATIVO
+   BADGES DE FILTRO
    ============================================ */
 #filterBadge {
   display: none;
@@ -180,9 +234,9 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: #333;
-  border: 1px solid #555;
-  color: #ddd;
+  background: #1a2a3a;
+  border: 1px solid #3b82f6;
+  color: #93c5fd;
   font-size: 0.7rem;
   font-family: var(--font-mono);
   padding: 5px 10px;
@@ -193,23 +247,18 @@ body {
 .badge button {
   background: none;
   border: none;
-  color: #aaa;
+  color: #60a5fa;
   font-size: 1rem;
   cursor: pointer;
   padding: 0 2px;
   line-height: 1;
-  /* Área de toque maior no mobile */
-  min-width: 20px;
-  min-height: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  min-width: 20px; min-height: 20px;
+  display: flex; align-items: center; justify-content: center;
 }
-
 .badge button:active { color: #fff; }
 
 /* ============================================
-   GRÁFICOS — uma coluna no mobile
+   GRÁFICOS
    ============================================ */
 .charts-grid {
   display: flex;
@@ -230,7 +279,10 @@ body {
   padding: 14px 12px 10px;
   position: relative;
   overflow: hidden;
+  transition: border-color 0.2s;
 }
+
+.chart-card:hover { border-color: var(--border-light); }
 
 .chart-title {
   font-size: 0.7rem;
@@ -239,20 +291,33 @@ body {
   text-transform: uppercase;
   color: var(--text-secondary);
   margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-/* Alturas dos gráficos no mobile — compactas mas legíveis */
+/* Bolinha colorida no título do gráfico */
+.chart-title::before {
+  content: '';
+  display: inline-block;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--title-dot, #60a5fa);
+  flex-shrink: 0;
+}
+
+.chart-card.dot-green  .chart-title::before { background: var(--color-positive); }
+.chart-card.dot-purple .chart-title::before { background: #a78bfa; }
+.chart-card.dot-blue   .chart-title::before { background: #60a5fa; }
+
 .chart-container { position: relative; width: 100%; }
 .chart-container canvas { width: 100% !important; }
 
-/* Gráfico Lucro por Mês */
-#chartLucroMes  { height: 180px; }
-/* Gráfico Lucro por Ano */
-#chartLucroAno  { height: 160px; }
-/* Gráfico Grande */
+/* Alturas mobile */
+#chartLucroMes   { height: 180px; }
+#chartLucroAno   { height: 160px; }
 #chartLucroGeral { height: 280px; }
 
-/* Cursores clicáveis */
 #chartLucroMes,
 #chartLucroAno,
 #chartLucroGeral { cursor: pointer; }
@@ -265,17 +330,17 @@ body {
   to   { opacity: 1; transform: translateY(0); }
 }
 
-.kpi-card { animation: fadeInUp 0.35s ease both; }
-.kpi-card:nth-child(1) { animation-delay: 0.05s; }
-.kpi-card:nth-child(2) { animation-delay: 0.10s; }
-.kpi-card:nth-child(3) { animation-delay: 0.15s; }
-.kpi-card:nth-child(4) { animation-delay: 0.20s; }
-.kpi-card:nth-child(5) { animation-delay: 0.25s; }
+.kpi-card  { animation: fadeInUp 0.35s ease both; }
+.kpi-card:nth-child(1) { animation-delay: 0.04s; }
+.kpi-card:nth-child(2) { animation-delay: 0.08s; }
+.kpi-card:nth-child(3) { animation-delay: 0.12s; }
+.kpi-card:nth-child(4) { animation-delay: 0.16s; }
+.kpi-card:nth-child(5) { animation-delay: 0.20s; }
 
 .chart-card { animation: fadeInUp 0.4s ease both; }
-.chart-card:nth-child(1) { animation-delay: 0.28s; }
-.chart-card:nth-child(2) { animation-delay: 0.33s; }
-.chart-card:nth-child(3) { animation-delay: 0.38s; }
+.chart-card:nth-child(1) { animation-delay: 0.24s; }
+.chart-card:nth-child(2) { animation-delay: 0.28s; }
+.chart-card:nth-child(3) { animation-delay: 0.32s; }
 
 /* ============================================
    LOADING
@@ -291,8 +356,8 @@ body {
 
 .loading-spinner {
   width: 32px; height: 32px;
-  border: 2px solid #333;
-  border-top-color: #888;
+  border: 2px solid #2d3748;
+  border-top-color: #60a5fa;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -302,34 +367,29 @@ body {
    SCROLLBAR
    ============================================ */
 ::-webkit-scrollbar { width: 4px; height: 4px; }
-::-webkit-scrollbar-track { background: #1a1a1a; }
-::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
+::-webkit-scrollbar-track { background: var(--bg-main); }
+::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 3px; }
 
 /* ============================================
    TABLET  (≥ 600px)
    ============================================ */
 @media (min-width: 600px) {
   .dashboard-body { padding: 16px; }
-
   .kpi-row { grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
-  .filter-card { grid-column: auto; }   /* Volta ao fluxo normal */
-
-  .kpi-value { font-size: 1.25rem; }
-
+  .filter-card { grid-column: auto; flex-direction: column; align-items: flex-start; gap: 6px; }
+  .kpi-value { font-size: 1.2rem; }
+  .dashboard-header h1 { font-size: 0.9rem; }
+  .header-meta { display: block; }
   #chartLucroMes   { height: 210px; }
   #chartLucroAno   { height: 190px; }
   #chartLucroGeral { height: 340px; }
-
-  .header-meta { display: block; }
 }
 
 /* ============================================
-   DESKTOP  (≥ 900px) — layout lado a lado
+   DESKTOP  (≥ 900px)
    ============================================ */
 @media (min-width: 900px) {
   .dashboard-body { padding: 20px; }
-
-  /* KPIs em linha */
   .kpi-row {
     grid-template-columns: repeat(4, 1fr) 160px;
     gap: 12px;
@@ -342,30 +402,29 @@ body {
     padding: 16px 20px;
     gap: 8px;
   }
-  .kpi-value { font-size: 1.55rem; }
-  .kpi-label { font-size: 0.72rem; }
-  .kpi-card  { padding: 16px 20px; }
+  .kpi-value  { font-size: 1.5rem; }
+  .kpi-label  { font-size: 0.72rem; }
+  .kpi-card   { padding: 16px 20px; }
 
-  /* Gráficos: coluna esquerda + grande direito */
   .charts-grid {
     display: grid;
     grid-template-columns: 1fr 2fr;
-    grid-template-rows: auto;
     flex-direction: unset;
+    gap: 12px;
   }
-  .left-col { grid-column: 1; grid-row: 1; }
+  .left-col        { grid-column: 1; grid-row: 1; }
   .chart-card.large { grid-column: 2; grid-row: 1; }
 
   #chartLucroMes   { height: 240px; }
   #chartLucroAno   { height: 195px; }
   #chartLucroGeral { height: 470px; }
 
-  .chart-card { padding: 20px; }
+  .chart-card  { padding: 20px; }
   .chart-title { font-size: 0.78rem; margin-bottom: 14px; }
 }
 
 /* ============================================
-   WIDE DESKTOP  (≥ 1200px)
+   WIDE  (≥ 1200px)
    ============================================ */
 @media (min-width: 1200px) {
   .kpi-value { font-size: 1.65rem; }
